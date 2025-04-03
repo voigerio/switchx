@@ -257,6 +257,28 @@ defmodule SwitchX do
     event = put_in(event.headers, Map.put(event.headers, "call-command", "execute"))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-name", application))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-arg", arg))
+    # event = put_in(event.headers, Map.put(event.headers, "Event-UUID", UUID.uuid4()))
+    send_message(conn, uuid, event, timeout)
+  end
+
+  @spec command(conn :: pid(), String.t(), application :: String.t(), args :: String.t()) ::
+          event :: SwitchX.Event
+  def command(conn, uuid, application, args) do
+    command(conn, uuid, application, args, SwitchX.Event.new(), @timeout)
+  end
+
+  @spec command(
+          conn :: pid(),
+          uuid :: String.t(),
+          application :: String.t(),
+          args :: String.t(),
+          event :: SwitchX.Event,
+          timeout :: non_neg_integer()
+        ) :: event :: SwitchX.Event
+  def command(conn, uuid, application, arg, event, timeout) do
+    event = put_in(event.headers, Map.put(event.headers, "call-command", "execute"))
+    event = put_in(event.headers, Map.put(event.headers, "execute-app-name", application))
+    event = put_in(event.headers, Map.put(event.headers, "execute-app-arg", arg))
     event = put_in(event.headers, Map.put(event.headers, "Event-UUID", UUID.uuid4()))
     send_message(conn, uuid, event, timeout)
   end
@@ -393,6 +415,7 @@ defmodule SwitchX do
   end
 
   defp safe_gen_call(conn, command, timeout) do
+    IO.inspect(command)
     :gen_statem.call(conn, command, timeout)
   catch
     :exit, err -> err
