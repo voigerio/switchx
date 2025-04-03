@@ -257,6 +257,8 @@ defmodule SwitchX do
     event = put_in(event.headers, Map.put(event.headers, "call-command", "execute"))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-name", application))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-arg", arg))
+    # setting Event-UUID leads to command being enqued in the applications_pending
+    # than in the commands_sent, which will wait for the command to finish execution. 
     # event = put_in(event.headers, Map.put(event.headers, "Event-UUID", UUID.uuid4()))
     send_message(conn, uuid, event, timeout)
   end
