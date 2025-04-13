@@ -279,6 +279,11 @@ defmodule SwitchX.Connection do
 
   ## Event STATE FUNCTIONS ##
 
+  def connecting(:event, %{headers: %{"Content-Type" => "text/rude-rejection"}}, data) do
+    Logger.info("Fail to connect, rude-rejection")
+    {:next_state, :disconnected, reply_from_queue("commands_sent", {:error, "Connection Denied"}, data)}
+  end
+
   def connecting(
         :event,
         %{headers: %{"Content-Type" => "auth/request"}},
