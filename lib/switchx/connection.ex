@@ -344,6 +344,9 @@ defmodule SwitchX.Connection do
     unless is_nil(reply_to),
       do: :gen_statem.reply(reply_to, event)
 
+    # Forward to owner so the session can react to application completions
+    send(data.owner, {:switchx_event, event})
+
     {:keep_state, data}
   end
 
