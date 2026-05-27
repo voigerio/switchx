@@ -82,12 +82,12 @@ defmodule SwitchX do
   This will let you execute a job in the background, and the result will be sent as an BACKGROUND_JOB event
   with an indicated UUID to match the reply to the command.
   """
-  @spec bg_api(conn :: pid(), args :: String.t()) :: {:ok, event :: SwitchX.Event}
+  @spec bg_api(conn :: pid(), args :: String.t()) :: {:ok, term}
   def bg_api(conn, args),
     do: bg_api(conn, args, @timeout)
 
   @spec bg_api(conn :: pid(), args :: String.t(), timeout :: non_neg_integer()) ::
-          {:ok, event :: SwitchX.Event}
+          {:ok, term}
   def bg_api(conn, args, timeout),
     do: safe_gen_call(conn, {:bgapi, args}, timeout)
 
@@ -104,11 +104,11 @@ defmodule SwitchX do
       iex> SwitchX.listen_event(conn, "BACKGROUND_JOB")
       {:ok, %SwitchX.Event{}}
   """
-  @spec listen_event(conn :: pid(), event_name :: String.t()) :: :ok
+  @spec listen_event(conn :: pid(), event_name :: String.t()) :: {:ok, term}
   def listen_event(conn, event_name),
     do: listen_event(conn, event_name, @timeout)
 
-  @spec listen_event(conn :: pid(), event_name :: String.t(), timeout :: non_neg_integer()) :: :ok
+  @spec listen_event(conn :: pid(), event_name :: String.t(), timeout :: non_neg_integer()) :: {:ok, term}
   def listen_event(conn, event_name, timeout),
     do: safe_gen_call(conn, {:listen_event, event_name}, timeout)
 
@@ -125,11 +125,11 @@ defmodule SwitchX do
       iex> SwitchX.noevents(conn)
       {:ok, %SwitchX.Event{}}
   """
-  @spec noevents(conn :: pid()) :: :ok
+  @spec noevents(conn :: pid()) :: {:ok, term}
   def noevents(conn),
     do: noevents(conn, @timeout)
 
-  @spec noevents(conn :: pid(), timeout :: non_neg_integer()) :: :ok
+  @spec noevents(conn :: pid(), timeout :: non_neg_integer()) :: {:ok, term}
   def noevents(conn, timeout),
     do: safe_gen_call(conn, {:noevents}, timeout)
 
@@ -239,44 +239,44 @@ defmodule SwitchX do
 
       iex> SwitchX.execute(conn, uuid, "playback", "ivr/ivr-welcome_to_freeswitch.wav")
   """
-  @spec execute(conn :: pid(), String.t(), application :: String.t(), args :: String.t()) ::
-          event :: SwitchX.Event
+  @spec execute(conn :: pid(), uuid :: String.t() | nil, application :: String.t(), args :: String.t()) ::
+          {:ok, term}
   def execute(conn, uuid, application, args) do
     execute(conn, uuid, application, args, SwitchX.Event.new(), @timeout)
   end
 
   @spec execute(
           conn :: pid(),
-          uuid :: String.t(),
+          uuid :: String.t() | nil,
           application :: String.t(),
           args :: String.t(),
           event :: SwitchX.Event,
           timeout :: non_neg_integer()
-        ) :: event :: SwitchX.Event
+        ) :: {:ok, term}
   def execute(conn, uuid, application, arg, event, timeout) do
     event = put_in(event.headers, Map.put(event.headers, "call-command", "execute"))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-name", application))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-arg", arg))
     # setting Event-UUID leads to command being enqued in the applications_pending
-    # than in the commands_sent, which will wait for the command to finish execution. 
+    # than in the commands_sent, which will wait for the command to finish execution.
     # event = put_in(event.headers, Map.put(event.headers, "Event-UUID", UUID.uuid4()))
     send_message(conn, uuid, event, timeout)
   end
 
-  @spec command(conn :: pid(), String.t(), application :: String.t(), args :: String.t()) ::
-          event :: SwitchX.Event
+  @spec command(conn :: pid(), uuid :: String.t() | nil, application :: String.t(), args :: String.t()) ::
+          {:ok, term}
   def command(conn, uuid, application, args) do
     command(conn, uuid, application, args, SwitchX.Event.new(), @timeout)
   end
 
   @spec command(
           conn :: pid(),
-          uuid :: String.t(),
+          uuid :: String.t() | nil,
           application :: String.t(),
           args :: String.t(),
           event :: SwitchX.Event,
           timeout :: non_neg_integer()
-        ) :: event :: SwitchX.Event
+        ) :: {:ok, term}
   def command(conn, uuid, application, arg, event, timeout) do
     event = put_in(event.headers, Map.put(event.headers, "call-command", "execute"))
     event = put_in(event.headers, Map.put(event.headers, "execute-app-name", application))
@@ -342,7 +342,7 @@ defmodule SwitchX do
   @spec hangup(conn :: pid(), cause :: String.t()) :: :ok | {:error, term}
   def hangup(conn, hangup_cause), do: hangup(conn, nil, hangup_cause)
 
-  @spec hangup(conn :: pid(), uuid :: String.t(), cause :: String.t()) :: :ok | {:error, term}
+  @spec hangup(conn :: pid(), uuid :: String.t() | nil, cause :: String.t()) :: :ok | {:error, term}
   def hangup(conn, uuid, hangup_cause) do
     message =
       SwitchX.Event.Headers.new(%{
